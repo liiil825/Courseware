@@ -24,7 +24,7 @@ BEGIN
 
 			------------------------------------------------插入操作记录------------------------------------------------
 			insert into CoursewareWorkflow.dbo.tb_Operation_Record(TargetId, TargetType, CreatedDate, [Type], Content, [Comment])
-			select 2, @relateId, getdate(), 5, '', ''
+			select 2, @relateId, getdate(), 5, '插入Relate表信息', ''
 
 			------------------------------------------------插入完成记录后删除------------------------------------------------
 			delete from @temp where id = @id
