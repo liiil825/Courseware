@@ -3,16 +3,16 @@ BEGIN
     declare @temp table (id int, relateId int, title nvarchar(100), lessonId int, classnum tinyint, ishdv bit, relateNum int, lessonyear smallint, media varchar(50), hdvrnd int, audiornd int, svideornd int, hvideornd int, isdemo bit, isfree bit, isexam bit, test bit, teacherId int, playerver smallint, startdate datetime, status tinyint, isshow bit, reStatus tinyint, mp4status tinyint, mp4restatus tinyint)
 
     -----------------------------@temp2表保存删除的信息-----------------------------
-	declare @temp2 table(relateId int, relateNum int, lessonId int, classnum tinyint, ishdv bit, lessonyear smallint, media varcher(50), hdvrnd int, audiornd int, svideornd int, hvideornd int)
+	declare @temp2 table(relateId int, relateNum int, lessonId int, classnum tinyint, ishdv bit, lessonyear smallint, media varcher(50), playerver smallint, hdvrnd int, audiornd int, svideornd int, hvideornd int)
 
-    declare @id int, @relateId int, @title nvarchar(50), @lessonId int, @lessonId2, @classnum tinyint, @classnum2, @ishdv bit, @ishdv2, @relateNum int, @relateNum2 int, @relateType int, @contentType int, @teacherId int, @lessonyear smallint, @lessonyear2 smallint, @media varchar(50), @media2 varchar(50), @hdvRnd int, @hdvRnd2 int, @audioRnd int, @audioRnd2 int, @svideornd int, @svideornd2 int, @hvideornd int, @hvideornd2 int, @playerver smallint, @status tinyint
+    declare @id int, @relateId int, @title nvarchar(50), @lessonId int, @lessonId2, @classnum tinyint, @classnum2, @ishdv bit, @ishdv2, @relateNum int, @relateNum2 int, @relateType int, @contentType int, @teacherId int, @lessonyear smallint, @lessonyear2 smallint, @media varchar(50), @media2 varchar(50), @hdvRnd int, @hdvRnd2 int, @audioRnd int, @audioRnd2 int, @svideornd int, @svideornd2 int, @hvideornd int, @hvideornd2 int, @playerver smallint, @playerver2 smallint, @status tinyint
     declare @attchmentId int
 
     insert into @temp
     select r.id, i.relate_id, i.title, i.lesson_id, i.classnum, ishdv, relate, lessonyear, media, hdvrnd, audiornd, svideornd, hvideornd, isdemo, is_free, isexam, test, teacher_id, playerver, i.startdate, i.status, i.isshow, i.reStatus, i.mp4status, i.mp4restatus
     from inserted i, Courseware.dbo.tb_Relate r, Courseware.dbo.tb_Relate_Product_Mapping m where i.class_id = m.productId and i.lessonyear = m.year and m.productsource = 1 and m.producttype = 1 and m.type = 1 and r.id = m.relateid and r.[index] = i.[index]
     insert into @temp2
-    select relate_id, relate, lessonid, classnum, ishdv, lessonyear, media, hdvrnd, audiornd, svideornd, hvideornd from deleted
+    select relate_id, relate, lessonid, classnum, ishdv, lessonyear, media, playerver, hdvrnd, audiornd, svideornd, hvideornd from deleted
 END
 
 while exists(select id from @temp)
@@ -34,7 +34,7 @@ while exists(select id from @temp)
         delete from @temp where relateId = @relateId
 
         ----------------------------------------查询@temp2表字段赋予临时变量, 然后删除记录----------------------------------------
-        select @relateNum2 = relateNum, @lessonId2 = lessonId, @classNum2 = classnum, @ishdv2 = ishdv, @lessonyear2 = lessonyear, @media2 = media, @hdvRnd2 = hdvRnd, @audioRnd2 = audioRnd, @svideornd2 = svideornd, @hvideornd2 = hvideornd from @temp2 where relateId = @relateId
+        select @relateNum2 = relateNum, @lessonId2 = lessonId, @classNum2 = classnum, @ishdv2 = ishdv, @lessonyear2 = lessonyear, @media2 = media, @playerver2 = playerver, @hdvRnd2 = hdvRnd, @audioRnd2 = audioRnd, @svideornd2 = svideornd, @hvideornd2 = hvideornd from @temp2 where relateId = @relateId
         delete from @temp2 where relateId = @relateId
 
         ------------------------------------------------更新讲座信息------------------------------------------------
@@ -67,11 +67,11 @@ while exists(select id from @temp)
 
         ------------------------------------------------更新音频文件附件------------------------------------------------
         set @audioPath = 'mp3/' + @tempPath + @rnd + '.mp3'
-        --如果删除时也有音频, 并且组成文件名的参数有一个不同就更新
-        if charIndex(@media,',1,') > 0 and charIndex(@media2, ',1,') > 0 and (@lessonId <> @lessonId2 or @classNum <> @classNum2 or @relateNum <> @relateNum2 or @audiornd <> @audiornd2 or @lessonyear <> @lessonyear2)
+        --如果删除时也有音频, 并且组成文件名的参数有一个不同或者版本信息不同就更新
+        if charIndex(@media,',1,') > 0 and charIndex(@media2, ',1,') > 0 and (@lessonId <> @lessonId2 or @classNum <> @classNum2 or @relateNum <> @relateNum2 or @audiornd <> @audiornd2 or @lessonyear <> @lessonyear2 or @playerver <> @playerver2)
         begin
             select @attchmentId = attchmentId from Courseware.dbo.tb_Relation_Mapping m, Courseware.dbo.tb_Attchment a where m.relatId = @id and a.type = 1
-            update Courseware.dbo.tb_Attchment set path = @audioPath where id = @attchmentId
+            update Courseware.dbo.tb_Attchment set path = @audioPath, version = @playerver where id = @attchmentId
         end
 
         --如果原来没有音频, 现在有音频则添加一天音频附件
@@ -87,32 +87,32 @@ while exists(select id from @temp)
         --如果删除记录和更改记录的ishdv则可能需要修改记录
         if @ishdv = 1 and @ishdv2 = 1
         begin
-            if @lessonId <> @lessonId2 or @classNum <> @classNum2 or @relateNum <> @relateNum2 or @lessonyear <> @lessonyear2 or @hdvrnd <> @hdvrnd2
+            if @lessonId <> @lessonId2 or @classNum <> @classNum2 or @relateNum <> @relateNum2 or @lessonyear <> @lessonyear2 or @hdvrnd <> @hdvrnd2 or @playerver <> @playerver2
             begin
                 -----------------更新高清flv附件-----------------
                 select @attchmentId = attchmentId from Courseware.dbo.tb_Relation_Mapping m, Courseware.dbo.tb_Attchment a where m.relatId = @id and a.type = 5
                 set @videoPath = 'flv/' + @tempPath + @hdvrnd + '.flv'
-                update Courseware.dbo.tb_Attchment set path = @videoPath where id = @attchmentId
+                update Courseware.dbo.tb_Attchment set path = @videoPath, version = @playerver where id = @attchmentId
                         
                 -----------------更新高清high.m3u8附件-----------------
                 select @attchmentId = attchmentId from Courseware.dbo.tb_Relation_Mapping m, Courseware.dbo.tb_Attchment a where m.relatId = @id and a.type = 6
                 set @videoPath = 'hlv/m3u8/' + @tempPath + @hdvrnd + '_high.m3u8'
-                update Courseware.dbo.tb_Attchment set path = @videoPath where id = @attchmentId
+                update Courseware.dbo.tb_Attchment set path = @videoPath, version = @playerver where id = @attchmentId
 
                 -----------------更新高清low.m3u8附件-----------------
                 select @attchmentId = attchmentId from Courseware.dbo.tb_Relation_Mapping m, Courseware.dbo.tb_Attchment a where m.relatId = @id and a.type = 7
                 set @videoPath = 'hlv/m3u8/' + @tempPath + @hdvrnd + '_low.m3u8'
-                update Courseware.dbo.tb_Attchment set path = @videoPath where id = @attchmentId
+                update Courseware.dbo.tb_Attchment set path = @videoPath, version = @playerver where id = @attchmentId
 
                 -----------------更新Edu4附件-----------------
                 select @attchmentId = attchmentId from Courseware.dbo.tb_Relation_Mapping m, Courseware.dbo.tb_Attchment a where m.relatId = @id and a.type = 21
                 set @videoPath = @lessonId + '/' + @lessonId + '-' + @classNum + '-' + @relateNum + '-' + @lessonYear + @hdvrnd + '.edu4'
-                update Courseware.dbo.tb_Attchment set path = @videoPath where id = @attchmentId
+                update Courseware.dbo.tb_Attchment set path = @videoPath, version = @playerver where id = @attchmentId
 
                 -----------------更新pdf附件-----------------
                 select @attchmentId = attchmentId from Courseware.dbo.tb_Relation_Mapping m, Courseware.dbo.tb_Attchment a where m.relatId = @id and a.type = 11
                 set @docPath = 'mp3/' + @tempPath + @rnd + '.pdf'
-                update Courseware.dbo.tb_Attchment set path = @docPath where id = @attchmentId
+                update Courseware.dbo.tb_Attchment set path = @docPath, version = @playerver where id = @attchmentId
             end
         end
         --如果删除记录里ishdv=0插入记录ishdv=1则直接添加记录
@@ -120,7 +120,7 @@ while exists(select id from @temp)
             begin
                 -----------------插入高清flv附件-----------------
 				set @videoPath = 'flv/' + @tempPath + @hdvrnd + '.flv'
-				insert into Courseware.dbo.tb_Attachment(type,mimeType,path,status,activatedCount,version,updatedDate,createdDate)
+				insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
 				values (5, 'video/x-flv', @videoPath, 1, 0, @playerver, getdate(), getdate())
 				insert into Courseware.dbo.tb_Relation_Mapping(relateId,attachmentId,partId,createdDate)
 				values (@relateId, @@identity, 0, getdate())
@@ -149,22 +149,22 @@ while exists(select id from @temp)
         else if @ishdv = 0 and @ishdv2 = 0
         begin
             ------------------------------------------更新宽屏视频附件------------------------------------------
-            if charIndex(@media, ',3,') > 0 and charIndex(@media2, ',3,') > 0 and (@svideornd <> @svideornd2 or @lessonId <> @lessonId2 or @classNum <> @classNum2 or @relateNum <> @relateNum2 or @lessonyear <> @lessonyear2)
+            if charIndex(@media, ',3,') > 0 and charIndex(@media2, ',3,') > 0 and (@svideornd <> @svideornd2 or @lessonId <> @lessonId2 or @classNum <> @classNum2 or @relateNum <> @relateNum2 or @lessonyear <> @lessonyear2 or @playerver <> @playerver2)
             begin
                 ---------------------更新宽屏mp4文件---------------------
                 set @videoPath = 'mp4/' + replace(@tempPath, @lessonId+'/a', @lessonId+'/s')+ @svideornd + '.mp4'
                 select @attchmentId = attchmentId from Courseware.dbo.tb_Relation_Mapping m, Courseware.dbo.tb_Attchment a where m.relatId = @id and a.type = 3 and a.mimeType = 'video/mp4'
-                update Courseware.dbo.tb_Attchment set path = @videoPath where id = @attchmentId
+                update Courseware.dbo.tb_Attchment set path = @videoPath, version = @playerver where id = @attchmentId
 
                 ---------------------更新宽屏flv文件---------------------
                 set @videoPath = 'flv/' + replace(@tempPath, @lessonId+'/a', @lessonId+'/s')+ @svideornd + '.flv'
                 select @attchmentId = attchmentId from Courseware.dbo.tb_Relation_Mapping m, Courseware.dbo.tb_Attchment a where m.relatId = @id and a.type = 3 and a.mimeType = 'video/flv'
-                update Courseware.dbo.tb_Attchment set path = @videoPath where id = @attchmentId
+                update Courseware.dbo.tb_Attchment set path = @videoPath, version = @playerver where id = @attchmentId
 
                 ---------------------更新宽屏Edu4文件---------------------
                 set @videoPath = replace(@tempPath, @lessonId + '/a', @lessonId + '/s') + @svideornd + '.edu4'
                 select @attchmentId = attchmentId from Courseware.dbo.tb_Relation_Mapping m, Courseware.dbo.tb_Attchment a where m.relatId = @id and a.type = 21
-                update Courseware.dbo.tb_Attchment set path = @videoPath where id = @attchmentId
+                update Courseware.dbo.tb_Attchment set path = @videoPath, version = @playerver where id = @attchmentId
             end
             ------------------------------------------插入宽屏视频附件------------------------------------------
             --如果删除数据里不包含宽屏, 但插入的数据包含则宽屏视频附件全为插入操作
@@ -193,22 +193,22 @@ while exists(select id from @temp)
             end
 
             ------------------------------------------更新清晰屏视频附件------------------------------------------
-            else if charIndex(@media, ',4,') > 0 and charIndex(@media2, ',4,') > 0 and (@hvideornd <> @hvideornd2 or @lessonId <> @lessonId2 or @classNum <> @classNum2 or @relateNum <> @relateNum2 or @lessonyear <> @lessonyear2)
+            else if charIndex(@media, ',4,') > 0 and charIndex(@media2, ',4,') > 0 and (@hvideornd <> @hvideornd2 or @lessonId <> @lessonId2 or @classNum <> @classNum2 or @relateNum <> @relateNum2 or @lessonyear <> @lessonyear2 or @playerver <> @playerver2)
             begin
                 ---------------------更新清晰mp4文件---------------------
                 set @videoPath = 'mp4/' + replace(@tempPath, @lessonId+'/a', @lessonId+'/h')+ @hvideornd + '.mp4'
                 select @attchmentId = attchmentId from Courseware.dbo.tb_Relation_Mapping m, Courseware.dbo.tb_Attchment a where m.relatId = @id and a.type = 4 and a.mimeType = 'video/mp4'
-                update Courseware.dbo.tb_Attchment set path = @videoPath where id = @attchmentId
+                update Courseware.dbo.tb_Attchment set path = @videoPath, version = @playerver where id = @attchmentId
 
                 ---------------------更新清晰屏flv文件---------------------
                 set @videoPath = 'flv/' + replace(@tempPath, @lessonId+'/a', @lessonId+'/h')+ @hvideornd + '.flv'
                 select @attchmentId = attchmentId from Courseware.dbo.tb_Relation_Mapping m, Courseware.dbo.tb_Attchment a where m.relatId = @id and a.type = 4 and a.mimeType = 'video/flv'
-                update Courseware.dbo.tb_Attchment set path = @videoPath where id = @attchmentId
+                update Courseware.dbo.tb_Attchment set path = @videoPath, version = @playerver where id = @attchmentId
 
                 ---------------------更新清晰屏Edu4文件---------------------
                 set @videoPath = replace(@tempPath, @lessonId + '/a', @lessonId + '/h') + @hvideornd + '.edu4'
                 select @attchmentId = attchmentId from Courseware.dbo.tb_Relation_Mapping m, Courseware.dbo.tb_Attchment a where m.relatId = @id and a.type = 21
-                update Courseware.dbo.tb_Attchment set path = @videoPath where id = @attchmentId
+                update Courseware.dbo.tb_Attchment set path = @videoPath, version = @playerver where id = @attchmentId
             end
             ------------------------------------------插入清晰屏视频附件------------------------------------------
             else if charIndex(@media, ',4,') > 0 and charIndex(@media2, ',4,') <= 0

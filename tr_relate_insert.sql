@@ -23,8 +23,8 @@ BEGIN
 			select 1, 1, classid, @relateId, 1, lessonyear, getdate() from @temp
 
 			------------------------------------------------插入操作记录------------------------------------------------
-            insert into CoursewareWorkflow.dbo.tb_Operation_Record(TargetId, TargetType, CreatedDate, [Type], Content, [Comment])
-            select 2, @relateId, getdate(), 5, '', ''
+			insert into CoursewareWorkflow.dbo.tb_Operation_Record(TargetId, TargetType, CreatedDate, [Type], Content, [Comment])
+			select 2, @relateId, getdate(), 5, '', ''
 
 			------------------------------------------------插入完成记录后删除------------------------------------------------
 			delete from @temp where id = @id
@@ -41,12 +41,12 @@ BEGIN
 			set @tempPath = @lessonId + '/' + (select case @ishdv when 1 then '' else 'a' end) + @lessonId + '-' + @classnum + '-' + @relateNum + '-' + @lessonYear + '-'
 			
 			---------------------------------------------插入HTML附件文件------------------------------------
-            set @htmlPath = '/sound/upCourseaware/' + @lessonId + '/' + @lessonyear + '-' + @classId + '-' + @classNum + '-' + @id + '.html'
-            insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
-            values (12, 'text/html', @htmlPath, 1, 0, @playerver, getdate(), getdate())
-            insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
-            values (@relateId, @@identity, 0, getdate())
-            ---------------------------------------------插入音频附件文件---------------------------------------------
+			set @htmlPath = '/sound/upCourseaware/' + @lessonId + '/' + @lessonyear + '-' + @classId + '-' + @classNum + '-' + @id + '.html'
+			insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
+			values (12, 'text/html', @htmlPath, 1, 0, @playerver, getdate(), getdate())
+			insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
+			values (@relateId, @@identity, 0, getdate())
+			---------------------------------------------插入音频附件文件---------------------------------------------
 			if charIndex(@media, ',1,') > 0
 			begin
 				set @audioPath = 'mp3/' + @tempPath + @rnd + '.mp3'
@@ -60,35 +60,35 @@ BEGIN
 			---------------------------------------------高清视频和讲义---------------------------------------------
 			if @ishdv = 1
 			begin
-                -----------------高清flv附件-----------------
+				-----------------高清flv附件-----------------
 				set @videoPath = 'flv/' + @tempPath + @hdvrnd + '.flv'
-				insert into Courseware.dbo.tb_Attachment(type,mimeType,path,status,activatedCount,version,updatedDate,createdDate)
+				insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
 				values (5, 'video/x-flv', @videoPath, 1, 0, @playerver, getdate(), getdate())
-				insert into Courseware.dbo.tb_Relation_Mapping(relateId,attachmentId,partId,createdDate)
+				insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
 				values (@relateId, @@identity, 0, getdate())
 				
-                -----------------高清high.m3u8附件-----------------
+				-----------------高清high.m3u8附件-----------------
 				set @videoPath = 'hlv/m3u8/' + @tempPath + @hdvrnd + '_high.m3u8'
 				insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
 				values (6, 'application/x-mpegurl', @videoPath, 1, 0, @playerver, getdate(), getdate())
 				insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
 				values (@relateId, @@identity, 0, getdate())
 
-                -----------------高清low.m3u8附件-----------------
+				-----------------高清low.m3u8附件-----------------
 				set @videoPath = 'hlv/m3u8/' + @tempPath + @hdvrnd + '_low.m3u8'
 				insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
 				values (7, 'application/x-mpegurl', @videoPath, 1, 0, @playerver, getdate(), getdate())
 				insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
 				values (@relateId, @@identity, 0, getdate())
 				
-                -----------------Edu4附件-----------------
-                set @videoPath = @lessonId + '/' + @lessonId + '-' + @classNum + '-' + @relateNum + '-' + @lessonYear + @hdvrnd + '.edu4'
+				-----------------Edu4附件-----------------
+				set @videoPath = @lessonId + '/' + @lessonId + '-' + @classNum + '-' + @relateNum + '-' + @lessonYear + @hdvrnd + '.edu4'
 				insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
 				values (21, 'application/x-edu4', @videoPath, 1, 0, @playerver, getdate(), getdate())
 				insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
 				values (@relateId, @@identity, 0, getdate())
 
-                -----------------pdf文档附件-----------------
+				-----------------pdf文档附件-----------------
 				set @docPath = 'mp3/' + @tempPath + @rnd + '.pdf'
 				insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
 				values (11, 'application/pdf', @docPath, 1, 0, 1, getdate(), getdate())
@@ -99,56 +99,56 @@ BEGIN
 			---------------------------------------------普通视频和讲义---------------------------------------------
 			else
 			begin
-                ----------------宽屏----------------
+				----------------宽屏----------------
 				if charIndex(@media, ',3,') > 0
-                    begin
-                        ---------------------------宽屏mp4附件---------------------------
-                        set @videoPath = 'mp4/' + replace(@tempPath, @lessonId + '/a', @lessonId + '/s') + @svideornd + '.mp4'
-                        insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
-                        values (3, 'video/mp4', @videoPath, 1, 0, @playerver, getdate(), getdate())
-                        insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
-                        values (@relateId, @@identity, 0, getdate())
+					begin
+							---------------------------宽屏mp4附件---------------------------
+							set @videoPath = 'mp4/' + replace(@tempPath, @lessonId + '/a', @lessonId + '/s') + @svideornd + '.mp4'
+							insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
+							values (3, 'video/mp4', @videoPath, 1, 0, @playerver, getdate(), getdate())
+							insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
+							values (@relateId, @@identity, 0, getdate())
 
-                        ---------------------------宽屏flv附件---------------------------
-                        set @videoPath = 'flv/' + replace(@tempPath, @lessonId + '/a', @lessonId + '/s') + @svideornd + '.flv'
-                        insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
-                        values (3, 'video/flv', @videoPath, 1, 0, @playerver, getdate(), getdate())
-                        insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
-                        values (@relateId, @@identity, 0, getdate())
+							---------------------------宽屏flv附件---------------------------
+							set @videoPath = 'flv/' + replace(@tempPath, @lessonId + '/a', @lessonId + '/s') + @svideornd + '.flv'
+							insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
+							values (3, 'video/flv', @videoPath, 1, 0, @playerver, getdate(), getdate())
+							insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
+							values (@relateId, @@identity, 0, getdate())
 
-                        ---------------------------宽屏edu4附件---------------------------
-                        set @videoPath = replace(@tempPath, @lessonId + '/a', @lessonId + '/s') + @svideornd + '.edu4'
-                        insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
-                        values (21, 'video/edu4', @videoPath, 1, 0, @playerver, getdate(), getdate())
-                        insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
-                        values (@relateId, @@identity, 0, getdate())
-                    end
-                ----------------清晰屏----------------
+							---------------------------宽屏edu4附件---------------------------
+							set @videoPath = replace(@tempPath, @lessonId + '/a', @lessonId + '/s') + @svideornd + '.edu4'
+							insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
+							values (21, 'video/edu4', @videoPath, 1, 0, @playerver, getdate(), getdate())
+							insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
+							values (@relateId, @@identity, 0, getdate())
+					end
+				----------------清晰屏----------------
 				if charIndex(@media,',4,') > 0
-                    begin
-                        ---------------------------清晰mp4附件---------------------------
-                        set @videoPath = 'mp4/' + replace(@tempPath, @lessonId + '/a', @lessonId + '/h')+ @hvideornd + '.mp4'
-                        insert into Courseware.dbo.tb_Attachment(type,mimeType,path,status,activatedCount,version,updatedDate,createdDate)
-                        values (4, 'video/mp4', @videoPath, 1, 0, @playerver, getdate(), getdate())
-                        insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
-                        values (@relateId, @@identity, 0, getdate())
+					begin
+						---------------------------清晰mp4附件---------------------------
+						set @videoPath = 'mp4/' + replace(@tempPath, @lessonId + '/a', @lessonId + '/h')+ @hvideornd + '.mp4'
+						insert into Courseware.dbo.tb_Attachment(type,mimeType,path,status,activatedCount,version,updatedDate,createdDate)
+						values (4, 'video/mp4', @videoPath, 1, 0, @playerver, getdate(), getdate())
+						insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
+						values (@relateId, @@identity, 0, getdate())
 
-                        ---------------------------清晰flv附件---------------------------
-                        set @videoPath = 'flv/' + replace(@tempPath, @lessonId + '/a', @lessonId + '/h') + @hvideornd + '.flv'
-                        insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
-                        values (4, 'video/flv', @videoPath, 1, 0, @playerver, getdate(), getdate())
-                        insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
-                        values (@relateId, @@identity, 0, getdate())
+						---------------------------清晰flv附件---------------------------
+						set @videoPath = 'flv/' + replace(@tempPath, @lessonId + '/a', @lessonId + '/h') + @hvideornd + '.flv'
+						insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
+						values (4, 'video/flv', @videoPath, 1, 0, @playerver, getdate(), getdate())
+						insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
+						values (@relateId, @@identity, 0, getdate())
 
-                        ---------------------------清晰edu4附件---------------------------
-                        set @videoPath = replace(@tempPath, @lessonId + '/a', @lessonId + '/h') + @hvideornd + '.edu4'
-                        insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
-                        values (21, 'video/edu4', @videoPath, 1, 0, @playerver, getdate(), getdate())
-                        insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
-                        values (@relateId, @@identity, 0, getdate())
-                    end
+						---------------------------清晰edu4附件---------------------------
+						set @videoPath = replace(@tempPath, @lessonId + '/a', @lessonId + '/h') + @hvideornd + '.edu4'
+						insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
+						values (21, 'video/edu4', @videoPath, 1, 0, @playerver, getdate(), getdate())
+						insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
+						values (@relateId, @@identity, 0, getdate())
+					end
 
-                ----------------doc文档----------------
+				----------------doc文档----------------
 				set @docPath = 'mp3/' + @tempPath + @rnd + '.doc'
 				insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
 				values (10, 'application/vnd.ms-word', @docPath, 1, 0, 1, getdate(), getdate())
@@ -157,4 +157,5 @@ BEGIN
 			end
 		end
 END
+
 
