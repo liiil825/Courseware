@@ -1,10 +1,10 @@
 BEGIN
-	declare @temp table(id int, title nvarchar(100), ishdv bit, lessonId int, classId int, classNum int, relateNum int, lessonyear smallint, media varchar(50), hdvrnd int, audiornd int, svideornd int, hvideornd int, isdemo bit, isfree bit, classId int, isexam bit, test bit, teacherId int, playerver smallint, isword bit, startdate datetime)
+	declare @temp table(id int, title nvarchar(100), ishdv bit, lessonId int, classId int, classNum int, relateNum int, lessonyear smallint, media varchar(50), hdvrnd int, audiornd int, svideornd int, hvideornd int, isdemo bit, isfree bit, isexam bit, test bit, teacherId int, playerver smallint, isword bit, startdate datetime)
 	declare @id int, @ishdv bit, @lessonId int, @classId int,@classNum int, @relateNum int, @lessonyear smallint, @media varchar(50), @hdvRnd int, @audioRnd int, @svideornd int, @hvideornd int, @playerver smallint, @isword bit
 	declare @relateId int
 
 	insert into @temp
-	select relate_id, title ,ishdv ,lesson_id , class_id, classnum, relate, lessonyear, media, hdvrnd, audiornd, svideornd, hvideornd, isdemo, is_free, class_id, isexam, test, teacher_id, playerver, isword, startdate from inserted
+	select relate_id, title ,ishdv ,lesson_id , class_id, classnum, relate, lessonyear, media, hdvrnd, audiornd, svideornd, hvideornd, isdemo, is_free, isexam, test, teacher_id, playerver, isword, startdate from inserted
 
 	while exists(select id from @temp)
 		begin
@@ -23,7 +23,7 @@ BEGIN
 			select 1, 1, classid, @relateId, 1, lessonyear, getdate() from @temp
 
 			------------------------------------------------插入操作记录------------------------------------------------
-            insert into CoursewareWorkflow.dbo.tb_Operation_Record(TargetId, TargetType, CreateDate, [Type], Content, [Comment])
+            insert into CoursewareWorkflow.dbo.tb_Operation_Record(TargetId, TargetType, CreatedDate, [Type], Content, [Comment])
             select 2, @relateId, getdate(), 5, '', ''
 
 			------------------------------------------------插入完成记录后删除------------------------------------------------
@@ -40,7 +40,13 @@ BEGIN
 
 			set @tempPath = @lessonId + '/' + (select case @ishdv when 1 then '' else 'a' end) + @lessonId + '-' + @classnum + '-' + @relateNum + '-' + @lessonYear + '-'
 			
-			---------------------------------------------插入音频附件和HTML文件------------------------------------
+			---------------------------------------------插入HTML附件文件------------------------------------
+            set @htmlPath = '/sound/upCourseaware/' + @lessonId + '/' + @lessonyear + '-' + @classId + '-' + @classNum + '-' + @id + '.html'
+            insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
+            values (12, 'text/html', @htmlPath, 1, 0, @playerver, getdate(), getdate())
+            insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
+            values (@relateId, @@identity, 0, getdate())
+            ---------------------------------------------插入音频附件文件---------------------------------------------
 			if charIndex(@media, ',1,') > 0
 			begin
 				set @audioPath = 'mp3/' + @tempPath + @rnd + '.mp3'
@@ -49,11 +55,6 @@ BEGIN
 				insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
 				values (@relateId, @@identity, 0, getdate())
 
-                set @htmlPath = '../../sound/upCourseaware/' + @lessonId + '/' + @lessonyaer + '-' + @classId + '-' @classNum + '-' + @id + '.html'
-				insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
-				values (12, 'text/html', @htmlPath, 1, 0, @playerver, getdate(), getdate())
-				insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
-				values (@relateId, @@identity, 0, getdate())
 			end
 
 			---------------------------------------------高清视频和讲义---------------------------------------------
@@ -132,6 +133,13 @@ BEGIN
                         insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
                         values (@relateId, @@identity, 0, getdate())
 
+                        ---------------------------清晰flv附件---------------------------
+                        set @videoPath = 'flv/' + replace(@tempPath, @lessonId + '/a', @lessonId + '/h') + @hvideornd + '.flv'
+                        insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
+                        values (4, 'video/flv', @videoPath, 1, 0, @playerver, getdate(), getdate())
+                        insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
+                        values (@relateId, @@identity, 0, getdate())
+
                         ---------------------------清晰edu4附件---------------------------
                         set @videoPath = replace(@tempPath, @lessonId + '/a', @lessonId + '/h') + @hvideornd + '.edu4'
                         insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
@@ -142,10 +150,10 @@ BEGIN
 
                 ----------------doc文档----------------
 				set @docPath = 'mp3/' + @tempPath + @rnd + '.doc'
-				insert into Courseware.dbo.tb_Attachment(type,mimeType,path,status,activatedCount,version,updatedDate,createdDate)
-				values (10,'application/vnd.ms-word',@docPath,1,0,1,getdate(),getdate())
-				insert into Courseware.dbo.tb_Relation_Mapping(relateId,attachmentId,partId,createdDate)
-				values (@relateId,@@identity,0,getdate())
+				insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
+				values (10, 'application/vnd.ms-word', @docPath, 1, 0, 1, getdate(), getdate())
+				insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
+				values (@relateId, @@identity, 0, getdate())
 			end
 		end
 END
