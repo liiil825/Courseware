@@ -1,24 +1,23 @@
 BEGIN
     -----------------------------@temp表保存插入的信息-----------------------------
-    declare @temp table (id int, relateId int, title nvarchar(100), lessonId int, classnum tinyint, ishdv bit, relateNum int, lessonyear smallint, media varchar(50), hdvrnd int, audiornd int, svideornd int, hvideornd int, isdemo bit, isfree bit, isexam bit, test bit, teacherId int, playerver smallint, startdate datetime, status tinyint, isshow bit, reStatus tinyint, mp4status tinyint, mp4restatus tinyint)
+    declare @temp table (id int, relateId int, title nvarchar(100), lessonId int, classnum tinyint, classId int, ishdv bit, relateNum int, lessonyear smallint, media varchar(50), hdvrnd int, audiornd int, svideornd int, hvideornd int, isdemo bit, isfree bit, isexam bit, test bit, teacherId int, playerver smallint, startdate datetime, status tinyint, isshow bit, reStatus tinyint, mp4status tinyint, mp4restatus tinyint)
 
     -----------------------------@temp2表保存删除的信息-----------------------------
-	declare @temp2 table(relateId int, relateNum int, lessonId int, classnum tinyint, ishdv bit, lessonyear smallint, media varcher(50), playerver smallint, hdvrnd int, audiornd int, svideornd int, hvideornd int)
+	  declare @temp2 table(relateId int, relateNum int, lessonId int, classnum tinyint, classId int, ishdv bit, lessonyear smallint, media varchar(50), playerver smallint, hdvrnd int, audiornd int, svideornd int, hvideornd int)
 
-    declare @id int, @relateId int, @title nvarchar(50), @lessonId int, @lessonId2, @classnum tinyint, @classnum2, @ishdv bit, @ishdv2, @relateNum int, @relateNum2 int, @relateType int, @contentType int, @teacherId int, @lessonyear smallint, @lessonyear2 smallint, @media varchar(50), @media2 varchar(50), @hdvRnd int, @hdvRnd2 int, @audioRnd int, @audioRnd2 int, @svideornd int, @svideornd2 int, @hvideornd int, @hvideornd2 int, @playerver smallint, @playerver2 smallint, @status tinyint
+    declare @id int, @relateId int, @title nvarchar(50), @lessonId int, @lessonId2 int, @classNum tinyint, @classNum2 tinyint, @classId int, @classId2 int, @ishdv bit, @ishdv2 bit, @relateNum int, @relateNum2 int, @relateType int, @contentType int, @teacherId int, @lessonyear smallint, @lessonyear2 smallint, @media varchar(50), @media2 varchar(50), @hdvRnd int, @hdvRnd2 int, @audioRnd int, @audioRnd2 int, @svideornd int, @svideornd2 int, @hvideornd int, @hvideornd2 int, @playerver smallint, @playerver2 smallint, @status tinyint
     declare @attchmentId int
 
     insert into @temp
-    select r.id, i.relate_id, i.title, i.lesson_id, i.classnum, ishdv, relate, lessonyear, media, hdvrnd, audiornd, svideornd, hvideornd, isdemo, is_free, isexam, test, teacher_id, playerver, i.startdate, i.status, i.isshow, i.reStatus, i.mp4status, i.mp4restatus
+    select r.id, i.relate_id, i.title, i.lesson_id, i.classnum, i.class_id, ishdv, relate, lessonyear, media, hdvrnd, audiornd, svideornd, hvideornd, isdemo, is_free, isexam, test, teacher_id, playerver, i.startdate, i.status, i.isshow, i.reStatus, i.mp4status, i.mp4restatus
     from inserted i, Courseware.dbo.tb_Relate r, Courseware.dbo.tb_Relate_Product_Mapping m where i.class_id = m.productId and i.lessonyear = m.year and m.productsource = 1 and m.producttype = 1 and m.type = 1 and r.id = m.relateid and r.[index] = i.[index]
     insert into @temp2
-    select relate_id, relate, lessonid, classnum, ishdv, lessonyear, media, playerver, hdvrnd, audiornd, svideornd, hvideornd from deleted
-END
+    select relate_id, relate, lesson_id, classnum, class_id, ishdv, lessonyear, media, playerver, hdvrnd, audiornd, svideornd, hvideornd from deleted
 
 while exists(select id from @temp)
     begin
-        ----------------------------------------查询@temp表字段赋予临时变量, 然后删除记录----------------------------------------
-        select @id = id, @relateId = relateId, @title = title, @lessonId = lessonId, @classnum = classnum,
+				----------------------------------------查询@temp表字段赋予临时变量, 然后删除记录----------------------------------------
+        select @id = id, @relateId = relateId, @title = title, @lessonId = lessonId, @classnum = classnum, @classId = classId,
         @relateType = case when isdemo = 1 and isfree = 1 then 4 when isdemo = 1 and isfree <> 1 then 3 when isfree = 1 and isdemo <> 1 then 2 else 1 end,
         @contentType = case isexam when 1 then 3 else (case test when 2 then 2 else 1 end) end,
         @ishdv = ishdv, @relateNum = relatenum, @lessonyear = lessonyear, @media = media, @hdvrnd = hdvrnd, @audiornd = audiornd, @svideornd = svideornd, @hvideornd=hvideornd, @playerver = playerver, @teacherId = teacherId,
@@ -34,7 +33,7 @@ while exists(select id from @temp)
         delete from @temp where relateId = @relateId
 
         ----------------------------------------查询@temp2表字段赋予临时变量, 然后删除记录----------------------------------------
-        select @relateNum2 = relateNum, @lessonId2 = lessonId, @classNum2 = classnum, @ishdv2 = ishdv, @lessonyear2 = lessonyear, @media2 = media, @playerver2 = playerver, @hdvRnd2 = hdvRnd, @audioRnd2 = audioRnd, @svideornd2 = svideornd, @hvideornd2 = hvideornd from @temp2 where relateId = @relateId
+        select @relateNum2 = relateNum, @lessonId2 = lessonId, @classNum2 = classnum, @classId2 = classId, @ishdv2 = ishdv, @lessonyear2 = lessonyear, @media2 = media, @playerver2 = playerver, @hdvRnd2 = hdvRnd, @audioRnd2 = audioRnd, @svideornd2 = svideornd, @hvideornd2 = hvideornd from @temp2 where relateId = @relateId
         delete from @temp2 where relateId = @relateId
 
         ------------------------------------------------更新讲座信息------------------------------------------------
@@ -296,5 +295,8 @@ while exists(select id from @temp)
             insert into Courseware.dbo.tb_Attachment(type, mimeType, path, status, activatedCount, version, updatedDate, createdDate)
             values (10, 'application/vnd.ms-word', @docPath, 1, 0, 1, getdate(), getdate())
             insert into Courseware.dbo.tb_Relation_Mapping(relateId, attachmentId, partId, createdDate)
+						values (@relateId, @@identity, 0, getdate())
         end
     end
+end
+
